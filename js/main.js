@@ -69,9 +69,9 @@ document.getElementById("file").addEventListener("change", async (ev) => {
   if (!frames.length) {
     return say(
       `No frame recovered (${ms} ms).<br><span class="muted">` +
-      `Check the sample rate, that the file is interleaved complex float32, ` +
-      `and that the FCS is correct — a frame is only accepted on a passing ` +
-      `checksum, so a bad CRC looks exactly like silence.</span>`, "warn");
+      `Check the sample rate first. Note that nothing is accepted unless its ` +
+      `checksum is right, so a subtly malformed frame looks exactly like ` +
+      `silence from here.</span>`, "warn");
   }
 
   const lines = frames.map((f) =>

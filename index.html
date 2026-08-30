@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>WOPR — GRCon26 CTF</title>
+<title>GRCon26 CTF</title>
 <style>
   :root { --bg:#0b0f0b; --fg:#7dfc7d; --dim:#3d7a3d; --warn:#ffd166; --err:#ff6b6b; --panel:#0f160f; }
   * { box-sizing: border-box; }
@@ -34,8 +34,8 @@
 </head>
 <body>
 <main>
-  <h1>GREETINGS PROFESSOR FALKEN</h1>
-  <p class="sub">SHALL WE PLAY A GAME?</p>
+  <h1>&gt; AWAITING TRANSMISSION</h1>
+  <p class="sub">THIS TERMINAL DOES NOT SPEAK FIRST.</p>
 
   <section>
     <p>This terminal listens. It does not transmit, and it will not build a packet
@@ -51,9 +51,8 @@
       <a href="challenge/briefing.sigmf-meta" download>briefing.sigmf-meta</a> ·
       <a href="challenge/briefing.cfile" download>briefing.cfile</a>
     </p>
-    <p class="muted">Complex float32, 48000 samples/second, baseband. If you would rather
-       not write a demodulator for this part, you can drop it into the box below —
-       it reads the same format you will be sending.</p>
+    <p class="muted">If you would rather not write a demodulator for this part, you
+       can drop it into the box below — it reads the same thing you will be sending.</p>
   </section>
 
   <h2>2 · Your transmission</h2>
@@ -61,29 +60,12 @@
     <p>Build the frame the briefing asks for, modulate it, and load the IQ here.</p>
     <label for="rate">Sample rate (Hz)</label>
     <input type="number" id="rate" value="48000" min="8000" step="1">
-    <label for="file">IQ file — interleaved complex float32 (<code>.cf32</code>,
-      <code>.cfile</code>, <code>.sigmf-data</code>)</label>
+    <label for="file">IQ file</label>
     <input type="file" id="file" accept=".cf32,.cfile,.sigmf-data,.iq,.bin,.raw">
     <div id="out" class="muted">Waiting for a file…</div>
   </section>
 
-  <h2>What it expects</h2>
-  <section>
-    <ul>
-      <li>Bell 202 AFSK — 1200 Hz mark, 2200 Hz space, 1200 baud</li>
-      <li>NRZI, HDLC framing, bits least-significant first</li>
-      <li>An AX.25 UI frame: control <code>0x03</code>, PID <code>0xF0</code>,
-          CRC-16/X.25 sent little-endian</li>
-      <li>Narrowband FM onto a baseband carrier at zero offset</li>
-    </ul>
-    <p class="muted">Tone polarity does not matter — NRZI is differential. Neither does
-       how much flag preamble you send.</p>
-  </section>
-
-  <footer>
-    GRCon26 CTF. Built on <a href="https://github.com/argilo">argilo</a>'s
-    “Shall we play a game?” from GRCon22.
-  </footer>
+  <footer>GRCon26 CTF</footer>
 </main>
 <script type="module" src="js/main.js"></script>
 </body>
