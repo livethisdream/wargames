@@ -1,0 +1,7 @@
+{
+  "v": 1,
+  "alg": "AES-256-GCM",
+  "kdf": "SHA-256 of the AX.25 UI frame, FCS included",
+  "nonce": "Uii4szAAxlsxIdy+",
+  "ct": "x+DAtTIrWPGpxwcgDHrZSk5DL41b7XG8bBxmKTRHdwE0u/7wqhcEcD2nDR0="
+}

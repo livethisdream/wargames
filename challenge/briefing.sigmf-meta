@@ -1,0 +1,17 @@
+{
+  "global": {
+    "core:datatype": "cf32_le",
+    "core:sample_rate": 48000.0,
+    "core:version": "1.0.0",
+    "core:description": "GRCon26 CTF challenge. Baseband capture.",
+    "core:author": "GRCon26 CTF",
+    "core:num_channels": 1
+  },
+  "captures": [
+    {
+      "core:sample_start": 0,
+      "core:frequency": 0
+    }
+  ],
+  "annotations": []
+}
