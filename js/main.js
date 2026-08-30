@@ -35,23 +35,18 @@ document.getElementById("file").addEventListener("change", async (ev) => {
   const buf = await file.arrayBuffer();
 
   if (buf.byteLength % 8 !== 0) {
-    return say(
-      `That file is ${buf.byteLength} bytes, which is not a whole number of ` +
-      `complex float32 samples (8 bytes each).<br>` +
-      `<span class="muted">A WAV or a real-valued file will not work — this wants ` +
-      `interleaved I/Q.</span>`, "err");
+    return say(`Not a whole number of samples.`, "err");
   }
   const head = new Uint8Array(buf, 0, Math.min(4, buf.byteLength));
   if (String.fromCharCode(...head) === "RIFF") {
-    return say("That is a WAV file. This wants raw interleaved complex float32, " +
-               "not a WAV container.", "err");
+    return say("That is a WAV container.", "err");
   }
 
   const iq = new Float32Array(buf);
   const probe = iq.subarray(0, Math.min(iq.length, 4096));
   for (let i = 0; i < probe.length; i++) {
     if (!Number.isFinite(probe[i])) {
-      return say("That file contains NaN or infinity in its first samples.", "err");
+      return say("Non-finite samples.", "err");
     }
   }
 
@@ -69,10 +64,7 @@ document.getElementById("file").addEventListener("change", async (ev) => {
 
   if (!frames.length) {
     return say(
-      `No frame recovered (${ms} ms).<br><span class="muted">` +
-      `Check the sample rate first. Note that nothing is accepted unless its ` +
-      `checksum is right, so a subtly malformed frame looks exactly like ` +
-      `silence from here.</span>`, "warn");
+      `No frame recovered (${ms} ms).`, "warn");
   }
 
   const lines = frames.map((f) =>
@@ -91,9 +83,7 @@ document.getElementById("file").addEventListener("change", async (ev) => {
 
   say(
     `Recovered ${frames.length} frame(s) in ${ms} ms:\n<pre>${lines}</pre>` +
-    `<span class="muted">Decoded cleanly, but that is not the frame this terminal ` +
-    `is waiting for. Read the briefing again — the source address and the exact ` +
-    `text both matter.</span>`, "warn");
+    `<span class="muted">Not the expected frame.</span>`, "warn");
 });
 
 // --- games -------------------------------------------------------------------

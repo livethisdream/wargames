@@ -4,9 +4,6 @@
 
 **Live at:** https://livethisdream.github.io/wargames/
 
-A transmission was captured. Demodulate it, and it will tell you what to send
-back. Build that, modulate it, and load the IQ into the page.
-
 ## What this is
 
 Nearly every signals CTF challenge is receive-only: you are handed a capture and

@@ -59,31 +59,25 @@
   <p class="sub">THIS TERMINAL DOES NOT SPEAK FIRST.</p>
 
   <section>
-    <p>This terminal listens. It does not transmit, and it will not build a packet
-       for you — that part is the game.</p>
-    <p class="muted">Everything here runs in your browser. Nothing is uploaded anywhere.</p>
+    <p class="muted">Runs entirely in your browser. Nothing is uploaded.</p>
   </section>
 
-  <h2>1 · The briefing</h2>
+  <h2>Intercept</h2>
   <section>
-    <p>A transmission was captured. Demodulate it and it will tell you what to send back.</p>
     <p>
       <a href="challenge/briefing.sigmf-data" download>briefing.sigmf-data</a> ·
       <a href="challenge/briefing.sigmf-meta" download>briefing.sigmf-meta</a> ·
       <a href="challenge/briefing.cfile" download>briefing.cfile</a>
     </p>
-    <p class="muted">If you would rather not write a demodulator for this part, you
-       can drop it into the box below — it reads the same thing you will be sending.</p>
   </section>
 
-  <h2>2 · Your transmission</h2>
+  <h2>Transmit</h2>
   <section>
-    <p>Build the frame the briefing asks for, modulate it, and load the IQ here.</p>
     <label for="rate">Sample rate (Hz)</label>
     <input type="number" id="rate" value="48000" min="8000" step="1">
     <label for="file">IQ file</label>
     <input type="file" id="file" accept=".cf32,.cfile,.sigmf-data,.iq,.bin,.raw">
-    <div id="out" class="muted">Waiting for a file…</div>
+    <div id="out" class="muted">&nbsp;</div>
   </section>
 
   <section id="games" hidden>
