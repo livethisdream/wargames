@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNiAxNiI+PHJlY3Qgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSIjMGIwZjBiIi8+PHBhdGggZD0iTTMgNGw0IDQtNCA0TTkgMTJoNCIgc3Ryb2tlPSIjN2RmYzdkIiBzdHJva2Utd2lkdGg9IjEuNiIgZmlsbD0ibm9uZSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PC9zdmc+">
 <title>GRCon26 CTF</title>
 <style>
   :root { --bg:#0b0f0b; --fg:#7dfc7d; --dim:#3d7a3d; --warn:#ffd166; --err:#ff6b6b; --panel:#0f160f; }
@@ -30,6 +31,26 @@
   .warn { color:var(--warn); }
   .muted { color:var(--dim); }
   footer { color:var(--dim); margin-top:3rem; font-size:.85rem; }
+  #games[hidden] { display:none; }
+  .grid3 { display:grid; grid-template-columns:repeat(3,3.5rem); gap:.4rem; margin:.75rem 0; }
+  .grid3 button { height:3.5rem; font:inherit; font-size:1.5rem; background:#000;
+      color:var(--fg); border:1px solid var(--dim); border-radius:4px; cursor:pointer; }
+  .grid3 button:disabled { cursor:default; color:var(--dim); }
+  .grid8 { display:grid; grid-template-columns:repeat(9,2.1rem); gap:2px; margin:.75rem 0; }
+  .grid8 .hd { color:var(--dim); text-align:center; line-height:2.1rem; font-size:.8rem; }
+  .grid8 button { height:2.1rem; font:inherit; font-size:.8rem; background:#000;
+      color:var(--dim); border:1px solid #1e3a1e; border-radius:3px; cursor:pointer; padding:0; }
+  .grid8 button.sel { border-color:var(--warn); color:var(--warn); }
+  .grid8 button.hit { background:#5c1111; color:#ffb3b3; border-color:#8b2020; }
+  .grid8 button.miss { color:#2f5d2f; }
+  .grid8 button:disabled { cursor:default; }
+  .row { display:flex; gap:.6rem; flex-wrap:wrap; align-items:center; margin:.5rem 0; }
+  .row button { font:inherit; background:#000; color:var(--fg); border:1px solid var(--dim);
+      border-radius:4px; padding:.45rem .9rem; cursor:pointer; }
+  .row button:hover { border-color:var(--fg); }
+  .log { color:var(--dim); font-size:.9rem; white-space:pre-wrap; min-height:1.5rem; }
+  input[type=text] { background:#000; color:var(--fg); border:1px solid var(--dim);
+      border-radius:4px; padding:.45rem; font:inherit; width:10rem; }
 </style>
 </head>
 <body>
@@ -63,6 +84,34 @@
     <label for="file">IQ file</label>
     <input type="file" id="file" accept=".cf32,.cfile,.sigmf-data,.iq,.bin,.raw">
     <div id="out" class="muted">Waiting for a file…</div>
+  </section>
+
+  <section id="games" hidden>
+    <h2 style="margin-top:1rem">3 · Shall we play a game?</h2>
+
+    <h3 style="color:var(--dim);font-size:.9rem;letter-spacing:.1em;margin:1.5rem 0 .25rem">
+      TIC-TAC-TOE</h3>
+    <p class="muted">WOPR moves second and plays perfectly.</p>
+    <div class="grid3" id="ttt"></div>
+    <div class="row">
+      <button id="ttt-new">NEW GAME</button>
+      <button id="ttt-decline">DECLINE</button>
+    </div>
+    <div class="log" id="ttt-log"></div>
+
+    <h3 style="color:var(--dim);font-size:.9rem;letter-spacing:.1em;margin:2.5rem 0 .25rem">
+      BATTLESHIP · TIME × FREQUENCY</h3>
+    <p class="muted">Columns are time slots, rows are frequency channels. Four contacts
+       are out there. Select up to four cells, then fire. A miss reports how many
+       neighbouring cells hold something.</p>
+    <div class="row">
+      <label for="bs-call" style="margin:0">Callsign</label>
+      <input type="text" id="bs-call" value="SDRDLE">
+      <button id="bs-new">NEW BOARD</button>
+      <button id="bs-fire">FIRE SALVO</button>
+    </div>
+    <div class="grid8" id="bs"></div>
+    <div class="log" id="bs-log"></div>
   </section>
 
   <footer>GRCon26 CTF</footer>
