@@ -133,6 +133,27 @@ export function findSlot(re, im, search = 48) {
 
 /** Interleaved complex float32 -> { cells, mags, start, syncSeen }.
  *  `cells` is a Set of "l,k" in BOARD coordinates (l 0-5, k 0-11). */
+// Carrier frequency offset in cycles/sample, from the phase of the same CP
+// correlation timing already needs. A frequency offset rotates the prefix
+// against the tail it copies: angle(r) = 2*pi * df * NFFT / fs. Only the phase
+// was being discarded. Good to half a subcarrier spacing; past that the phase
+// wraps and neighbouring subcarriers have merged anyway.
+function estimateCfo(re, im, start) {
+  let ar = 0, ai = 0;
+  let pos = start;
+  for (let l = 0; l < N_SYM; l++) {
+    const cp = cpLen(l);
+    if (pos + cp + NFFT > re.length) break;
+    for (let i = 0; i < cp; i++) {
+      const a = pos + NFFT + i, b = pos + i;
+      ar += re[a] * re[b] + im[a] * im[b];
+      ai += im[a] * re[b] - re[a] * im[b];
+    }
+    pos += cp + NFFT;
+  }
+  return Math.atan2(ai, ar) / (2 * Math.PI * NFFT);
+}
+
 export function demodulate(interleaved, start) {
   const n = Math.floor(interleaved.length / 2);
   const re = new Float64Array(n);
@@ -142,6 +163,17 @@ export function demodulate(interleaved, start) {
     im[i] = interleaved[2 * i + 1];
   }
   if (start === undefined) start = findSlot(re, im);
+
+  const df = estimateCfo(re, im, start);
+  if (df !== 0) {
+    for (let i = 0; i < n; i++) {
+      const a = -2 * Math.PI * df * i;
+      const c = Math.cos(a), s2 = Math.sin(a);
+      const r = re[i] * c - im[i] * s2;
+      im[i] = re[i] * s2 + im[i] * c;
+      re[i] = r;
+    }
+  }
 
   const used = new Set(SC_BINS.map(binIndex));
   used.add(0);
