@@ -101,7 +101,7 @@ document.getElementById("file").addEventListener("change", async (ev) => {
 // solved game. They are the reward, not a second lock.
 
 
-const COL_LETTERS = "ABCDEFGH";
+const cellName = (c, r) => `k${r}/l${c}`;   // LTE resource-element notation
 let ttt, bs, selected = [];
 
 function renderTtt() {
@@ -138,17 +138,18 @@ function renderBs() {
   host.innerHTML = "";
   const corner = document.createElement("div");
   corner.className = "hd";
+  corner.textContent = "k\\l";
   host.appendChild(corner);
   for (let c = 0; c < COLS; c++) {
     const h = document.createElement("div");
     h.className = "hd";
-    h.textContent = COL_LETTERS[c];
+    h.textContent = c;
     host.appendChild(h);
   }
   for (let r = 0; r < ROWS; r++) {
     const h = document.createElement("div");
     h.className = "hd";
-    h.textContent = r + 1;
+    h.textContent = r;
     host.appendChild(h);
     for (let c = 0; c < COLS; c++) {
       const k = `${c},${r}`;
@@ -174,8 +175,10 @@ function newBs() {
   const call = (document.getElementById("bs-call").value || "SDRDLE").toUpperCase();
   bs = new Battleship(call);
   selected = [];
+  const n = Object.values(bs.fleet).reduce((a, s) => a + s.length, 0);
   document.getElementById("bs-log").textContent =
-    `Board seeded from ${call}. Four contacts, 12 cells.`;
+    `Resource grid seeded from ${call}. ` +
+    `${Object.keys(bs.fleet).length} contacts across ${n} resource elements.`;
   renderBs();
 }
 
@@ -190,7 +193,7 @@ function fireSalvo() {
   const log = document.getElementById("bs-log");
   if (!res.ok) { log.textContent = res.error; return; }
   const lines = res.results.map((x) => {
-    const cell = `${COL_LETTERS[x.c]}${x.r + 1}`;
+    const cell = cellName(x.c, x.r);
     if (x.outcome === "sunk") return `${cell}  HIT — ${x.ship.toUpperCase()} DESTROYED`;
     if (x.outcome === "hit") return `${cell}  HIT`;
     if (x.outcome === "repeat") return `${cell}  already fired`;
@@ -207,14 +210,21 @@ export function revealGames() {
   el.hidden = false;
   document.getElementById("ttt-new").addEventListener("click", newTtt);
   document.getElementById("ttt-decline").addEventListener("click", () => {
-    if (ttt.decline().ok) {
-      renderTtt();
-      document.getElementById("ttt-log").textContent = "DECLINED. THAT WAS THE MOVE.";
+    if (!ttt.decline().ok) return;
+    renderTtt();
+    document.getElementById("ttt-log").textContent = "DECLINED. THAT WAS THE MOVE.";
+    // Declining is the ONLY way through. A draw is not enough: the lesson is
+    // specifically about not playing, so the reward for refusing is the game
+    // that was actually worth playing.
+    const wrap = document.getElementById("bs-wrap");
+    if (wrap.hidden) {
+      wrap.hidden = false;
+      newBs();
+      wrap.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   });
   document.getElementById("bs-new").addEventListener("click", newBs);
   document.getElementById("bs-fire").addEventListener("click", fireSalvo);
   newTtt();
-  newBs();
   el.scrollIntoView({ behavior: "smooth", block: "start" });
 }

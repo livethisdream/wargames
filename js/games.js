@@ -151,10 +151,15 @@ export function proveUnwinnable() {
 // waterfall are the same object. Salvo fire and a proximity leak on misses
 // keep the round-trip count sane: blind 8x8 Battleship takes about 40 shots.
 
-export const COLS = 8;
-export const ROWS = 8;
+// One LTE resource block, normal cyclic prefix: 12 subcarriers by 7 OFDM
+// symbols. Not an arbitrary 8x8 -- if the board is a time-frequency grid then
+// it should be a real one, and an LTE RB is the rare standard whose basic unit
+// IS a small 2D block. Cells are resource elements, addressed (k, l) as in the
+// spec: k the subcarrier, l the symbol.
+export const COLS = 7;    // l -- OFDM symbols in a slot
+export const ROWS = 12;   // k -- subcarriers in a resource block
 export const SHIPS = [
-  ["carrier", 4], ["cruiser", 3], ["submarine", 3], ["patrol", 2],
+  ["carrier", 5], ["battleship", 4], ["cruiser", 3], ["submarine", 3], ["destroyer", 2],
 ];
 export const SALVO = 4;
 

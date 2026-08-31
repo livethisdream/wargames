@@ -36,7 +36,7 @@
   .grid3 button { height:3.5rem; font:inherit; font-size:1.5rem; background:#000;
       color:var(--fg); border:1px solid var(--dim); border-radius:4px; cursor:pointer; }
   .grid3 button:disabled { cursor:default; color:var(--dim); }
-  .grid8 { display:grid; grid-template-columns:repeat(9,2.1rem); gap:2px; margin:.75rem 0; }
+  .grid8 { display:grid; grid-template-columns:repeat(8,2.4rem); gap:2px; margin:.75rem 0; }
   .grid8 .hd { color:var(--dim); text-align:center; line-height:2.1rem; font-size:.8rem; }
   .grid8 button { height:2.1rem; font:inherit; font-size:.8rem; background:#000;
       color:var(--dim); border:1px solid #1e3a1e; border-radius:3px; cursor:pointer; padding:0; }
@@ -93,11 +93,12 @@
     </div>
     <div class="log" id="ttt-log"></div>
 
+    <div id="bs-wrap" hidden>
     <h3 style="color:var(--dim);font-size:.9rem;letter-spacing:.1em;margin:2.5rem 0 .25rem">
-      BATTLESHIP · TIME × FREQUENCY</h3>
-    <p class="muted">Columns are time slots, rows are frequency channels. Four contacts
-       are out there. Select up to four cells, then fire. A miss reports how many
-       neighbouring cells hold something.</p>
+      RESOURCE GRID</h3>
+    <p class="muted">One resource block. Columns are OFDM symbols, rows are subcarriers.
+       Select up to four resource elements, then fire. A miss reports how many
+       neighbouring elements are occupied.</p>
     <div class="row">
       <label for="bs-call" style="margin:0">Callsign</label>
       <input type="text" id="bs-call" value="SDRDLE">
@@ -106,6 +107,7 @@
     </div>
     <div class="grid8" id="bs"></div>
     <div class="log" id="bs-log"></div>
+    </div>
   </section>
 
   <footer>GRCon26 CTF</footer>
