@@ -32,10 +32,9 @@ async function tryUnseal(frameBytes) {
   }
 }
 
-const link = (file, label) =>
+const link = (file) =>
   `<a href="challenge/${file}.sigmf-data" download>${file}.sigmf-data</a> · ` +
-  `<a href="challenge/${file}.cfile" download>${file}.cfile</a>` +
-  (label ? `<br><span class="muted">${label}</span>` : "");
+  `<a href="challenge/${file}.cfile" download>${file}.cfile</a>`;
 
 // --- rendering ---------------------------------------------------------------
 
@@ -98,7 +97,9 @@ function openGrid() {
   const wrap = document.getElementById("bs-wrap");
   if (!wrap.hidden) return;
   wrap.hidden = false;
-  document.getElementById("grid-link").innerHTML = link("gridspec");
+  // Answered in the waveform it introduces, not in a paragraph about it.
+  document.getElementById("grid-link").innerHTML =
+    `WELCOME TO THE NEXT LEVEL.<br>` + link("nextlevel");
   bs = new Battleship("SDRDLE");
   document.getElementById("bs-log").textContent =
     `${Object.keys(bs.fleet).length} contacts. ` +
