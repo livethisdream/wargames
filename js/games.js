@@ -156,7 +156,7 @@ export function proveUnwinnable() {
 // it should be a real one, and an LTE RB is the rare standard whose basic unit
 // IS a small 2D block. Cells are resource elements, addressed (k, l) as in the
 // spec: k the subcarrier, l the symbol.
-export const COLS = 7;    // l -- OFDM symbols in a slot
+export const COLS = 6;    // l -- the shot symbols, 1-6 (symbol 0 is sync)
 export const ROWS = 12;   // k -- subcarriers in a resource block
 export const SHIPS = [
   ["carrier", 5], ["battleship", 4], ["cruiser", 3], ["submarine", 3], ["destroyer", 2],
