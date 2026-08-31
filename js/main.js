@@ -1,18 +1,23 @@
-import { demodulate } from "./aprs.js";
+import { demodulate as demodAprs } from "./aprs.js";
+import { demodulate as demodOfdm, N_SC, N_SHOT_SYM } from "./ofdm.js";
 import { TicTacToe, Battleship, EMPTY, SALVO, COLS, ROWS } from "./games.js";
 
 const YEAR = "2026";
-
 const out = document.getElementById("out");
 const rateEl = document.getElementById("rate");
 
 const say = (html, cls = "") => { out.className = cls; out.innerHTML = html; };
-const esc = (s) => s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+
+// Everything is driven by uploaded signal. Nothing here is clickable except a
+// local reset -- you play by transmitting, which is the whole point of the
+// challenge and the reason the page has no modulator in it.
+let stage = "uplink";          // uplink -> tictactoe -> battleship
+let ttt, bs;
 
 // The flag is NOT in this bundle. What ships is AES-GCM ciphertext whose key is
-// SHA-256 of a correctly built AX.25 frame -- so the page can hand out a flag it
-// has never held, and reading the source gets you an encrypted blob and a
-// decryptor rather than an answer.
+// SHA-256 of a correctly built AX.25 frame, so the page hands out a flag it has
+// never held.
 async function tryUnseal(frameBytes) {
   const blob = await (await fetch("flag_blob.json", { cache: "no-store" })).json();
   const keyBytes = await crypto.subtle.digest("SHA-256", frameBytes);
@@ -23,114 +28,26 @@ async function tryUnseal(frameBytes) {
       { name: "AES-GCM", iv: b64(blob.nonce) }, key, b64(blob.ct));
     return new TextDecoder().decode(pt);
   } catch {
-    return null;   // wrong frame; GCM refuses rather than returning noise
+    return null;
   }
 }
 
-document.getElementById("file").addEventListener("change", async (ev) => {
-  const file = ev.target.files[0];
-  if (!file) return;
-  const rate = Number(rateEl.value);
-  if (!Number.isFinite(rate) || rate <= 0) return say("Set a sample rate first.", "err");
+const link = (file, label) =>
+  `<a href="challenge/${file}.sigmf-data" download>${file}.sigmf-data</a> · ` +
+  `<a href="challenge/${file}.cfile" download>${file}.cfile</a>` +
+  (label ? `<br><span class="muted">${label}</span>` : "");
 
-  say("Reading…");
-  const buf = await file.arrayBuffer();
-
-  if (buf.byteLength % 8 !== 0) {
-    return say(`Not a whole number of samples.`, "err");
-  }
-  const head = new Uint8Array(buf, 0, Math.min(4, buf.byteLength));
-  if (String.fromCharCode(...head) === "RIFF") {
-    return say("That is a WAV container.", "err");
-  }
-
-  const iq = new Float32Array(buf);
-  const probe = iq.subarray(0, Math.min(iq.length, 4096));
-  for (let i = 0; i < probe.length; i++) {
-    if (!Number.isFinite(probe[i])) {
-      return say("Non-finite samples.", "err");
-    }
-  }
-
-  say(`Demodulating ${(iq.length / 2).toLocaleString()} samples…`);
-  await new Promise((r) => setTimeout(r, 0));   // let the browser paint
-
-  let frames;
-  const t0 = performance.now();
-  try {
-    frames = demodulate(iq, rate);
-  } catch (e) {
-    return say(`Demodulator failed: ${esc(String(e))}`, "err");
-  }
-  const ms = Math.round(performance.now() - t0);
-
-  if (!frames.length) {
-    return say(
-      `No frame recovered (${ms} ms).`, "warn");
-  }
-
-  const lines = frames.map((f) =>
-    `  ${esc(f.src[0])}&gt;${esc(f.dest[0])}:${esc(f.info)}`).join("\n");
-
-  for (const f of frames) {
-    const flag = await tryUnseal(f.bytes);
-    if (flag) {
-      say(
-        `Recovered ${frames.length} frame(s) in ${ms} ms:\n<pre>${lines}</pre>` +
-        `<div class="flag">${esc(flag)}</div>`);
-      revealGames();
-      return;
-    }
-  }
-
-  // A quick, specific check before the generic rejection. The briefing asks for
-  // the current year, so a message without it failed an instruction the player
-  // was actually given -- saying so is not a hint, it is confirming they did
-  // not do the thing they were told. Anything else stays terse.
-  const hasYear = frames.some((f) => f.info.includes(YEAR));
-  say(
-    `Recovered ${frames.length} frame(s) in ${ms} ms:\n<pre>${lines}</pre>` +
-    `<span class="muted">` +
-    (hasYear ? "Not the expected frame." : `No ${YEAR} in your message.`) +
-    `</span>`, "warn");
-});
-
-// --- games -------------------------------------------------------------------
-// Revealed only after the uplink is solved. They carry no flag and cannot: for
-// the page to say "hit" it must know where the ships are, and tic-tac-toe is a
-// solved game. They are the reward, not a second lock.
-
-
-const cellName = (c, r) => `k${r}/l${c}`;   // LTE resource-element notation
-let ttt, bs, selected = [];
+// --- rendering ---------------------------------------------------------------
 
 function renderTtt() {
   const host = document.getElementById("ttt");
   host.innerHTML = "";
-  ttt.board.forEach((v, i) => {
+  ttt.board.forEach((v) => {
     const b = document.createElement("button");
     b.textContent = v === EMPTY ? "" : v;
-    b.disabled = ttt.finished || v !== EMPTY;
-    b.addEventListener("click", () => {
-      const r = ttt.play(i);
-      if (!r.ok) return;
-      renderTtt();
-      const log = document.getElementById("ttt-log");
-      if (ttt.finished) {
-        log.textContent =
-          ttt.outcome === "D" ? "NO WINNER. THERE NEVER IS."
-          : ttt.outcome === "O" ? "YOU LOSE. TRY AGAIN, OR DO NOT."
-          : "";
-      }
-    });
+    b.disabled = true;                 // display only: moves arrive as signal
     host.appendChild(b);
   });
-}
-
-function newTtt() {
-  ttt = new TicTacToe();
-  document.getElementById("ttt-log").textContent = "";
-  renderTtt();
 }
 
 function renderBs() {
@@ -154,81 +71,161 @@ function renderBs() {
     for (let c = 0; c < COLS; c++) {
       const k = `${c},${r}`;
       const b = document.createElement("button");
-      const isHit = bs.hits.has(k);
-      const isMiss = bs.misses.has(k);
-      if (isHit) { b.className = "hit"; b.textContent = "X"; }
-      else if (isMiss) { b.className = "miss"; b.textContent = String(bs.proximity(c, r)); }
-      else if (selected.some(([x, y]) => x === c && y === r)) b.className = "sel";
-      b.disabled = isHit || isMiss || bs.finished;
-      b.addEventListener("click", () => {
-        const at = selected.findIndex(([x, y]) => x === c && y === r);
-        if (at >= 0) selected.splice(at, 1);
-        else if (selected.length < SALVO) selected.push([c, r]);
-        renderBs();
-      });
+      b.disabled = true;               // display only
+      if (bs.hits.has(k)) { b.className = "hit"; b.textContent = "X"; }
+      else if (bs.misses.has(k)) { b.className = "miss"; b.textContent = String(bs.proximity(c, r)); }
       host.appendChild(b);
     }
   }
 }
 
-function newBs() {
-  // Written from the constant, never typed into the copy. A hardcoded number
-  // here goes stale the moment SALVO changes, and prose does not fail a test.
-  const label = document.getElementById("bs-salvo");
-  if (label) label.textContent = SALVO;
-  const call = (document.getElementById("bs-call").value || "SDRDLE").toUpperCase();
-  bs = new Battleship(call);
-  selected = [];
-  const n = Object.values(bs.fleet).reduce((a, s) => a + s.length, 0);
-  document.getElementById("bs-log").textContent =
-    `Resource grid seeded from ${call}. ` +
-    `${Object.keys(bs.fleet).length} contacts across ${n} resource elements.`;
-  renderBs();
+function newTtt() {
+  ttt = new TicTacToe();
+  document.getElementById("ttt-log").textContent = "";
+  renderTtt();
 }
 
-function fireSalvo() {
-  if (!selected.length) {
-    document.getElementById("bs-log").textContent = "Select up to four cells first.";
+function openGames() {
+  const el = document.getElementById("games");
+  el.hidden = false;
+  document.getElementById("rules-link").innerHTML = link("rules");
+  document.getElementById("ttt-new").addEventListener("click", newTtt);
+  newTtt();
+  stage = "tictactoe";
+  el.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function openGrid() {
+  const wrap = document.getElementById("bs-wrap");
+  if (!wrap.hidden) return;
+  wrap.hidden = false;
+  document.getElementById("grid-link").innerHTML = link("gridspec");
+  bs = new Battleship("SDRDLE");
+  document.getElementById("bs-log").textContent =
+    `${Object.keys(bs.fleet).length} contacts. ` +
+    `Up to ${SALVO} elements per transmission.`;
+  renderBs();
+  stage = "battleship";
+  wrap.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+// --- moves -------------------------------------------------------------------
+
+const parseTttCell = (info) => {
+  const m = /\b([ABC])\s*([123])\b/i.exec(info);
+  if (!m) return null;
+  return (Number(m[2]) - 1) * 3 + "ABC".indexOf(m[1].toUpperCase());
+};
+
+function handleTttFrame(info, lines, ms) {
+  if (/\bDECLINE\b/i.test(info)) {
+    if (!ttt.finished) ttt.decline();
+    renderTtt();
+    document.getElementById("ttt-log").textContent = "DECLINED. THAT WAS THE MOVE.";
+    openGrid();
+    say(`<pre>${lines}</pre><span class="muted">Declined.</span>`);
     return;
   }
-  const res = bs.fire(selected);
-  selected = [];
+  const idx = parseTttCell(info);
+  if (idx === null) {
+    say(`<pre>${lines}</pre><span class="muted">No move in that frame.</span>`, "warn");
+    return;
+  }
+  const r = ttt.play(idx);
+  renderTtt();
+  if (!r.ok) {
+    say(`<pre>${lines}</pre><span class="muted">${esc(r.error)}</span>`, "warn");
+    return;
+  }
+  const log = document.getElementById("ttt-log");
+  log.textContent = ttt.finished
+    ? (ttt.outcome === "D" ? "NO WINNER. THERE NEVER IS."
+       : "YOU LOSE. TRY AGAIN, OR DO NOT.")
+    : "";
+  say(`<pre>${lines}</pre><span class="muted">Move accepted (${ms} ms).</span>`);
+}
+
+function handleSalvo(cells, ms) {
+  const shots = [...cells].map((s) => s.split(",").map(Number));
+  const res = bs.fire(shots);
   renderBs();
   const log = document.getElementById("bs-log");
   if (!res.ok) { log.textContent = res.error; return; }
-  const lines = res.results.map((x) => {
-    const cell = cellName(x.c, x.r);
+  log.textContent = res.results.map((x) => {
+    const cell = `k${x.r}/l${x.c}`;
     if (x.outcome === "sunk") return `${cell}  HIT — ${x.ship.toUpperCase()} DESTROYED`;
     if (x.outcome === "hit") return `${cell}  HIT`;
     if (x.outcome === "repeat") return `${cell}  already fired`;
     return `${cell}  miss (${x.proximity} adjacent)`;
-  });
-  log.textContent = lines.join("\n") +
+  }).join("\n") +
     `\n\n${res.shots} shots · ${res.remaining} contacts remaining` +
     (res.finished ? "\n\nALL CONTACTS DESTROYED." : "");
+  say(`<span class="muted">Salvo of ${shots.length} resolved (${ms} ms).</span>`);
 }
 
-export function revealGames() {
-  const el = document.getElementById("games");
-  if (!el || !el.hidden) return;
-  el.hidden = false;
-  document.getElementById("ttt-new").addEventListener("click", newTtt);
-  document.getElementById("ttt-decline").addEventListener("click", () => {
-    if (!ttt.decline().ok) return;
-    renderTtt();
-    document.getElementById("ttt-log").textContent = "DECLINED. THAT WAS THE MOVE.";
-    // Declining is the ONLY way through. A draw is not enough: the lesson is
-    // specifically about not playing, so the reward for refusing is the game
-    // that was actually worth playing.
-    const wrap = document.getElementById("bs-wrap");
-    if (wrap.hidden) {
-      wrap.hidden = false;
-      newBs();
-      wrap.scrollIntoView({ behavior: "smooth", block: "start" });
+// --- upload ------------------------------------------------------------------
+
+document.getElementById("file").addEventListener("change", async (ev) => {
+  const file = ev.target.files[0];
+  if (!file) return;
+  const rate = Number(rateEl.value);
+  if (!Number.isFinite(rate) || rate <= 0) return say("Set a sample rate first.", "err");
+
+  say("Reading…");
+  const buf = await file.arrayBuffer();
+  if (buf.byteLength % 8 !== 0) return say("Not a whole number of samples.", "err");
+  if (String.fromCharCode(...new Uint8Array(buf, 0, Math.min(4, buf.byteLength))) === "RIFF") {
+    return say("That is a WAV container.", "err");
+  }
+  const iq = new Float32Array(buf);
+  const probe = iq.subarray(0, Math.min(iq.length, 4096));
+  for (let i = 0; i < probe.length; i++) {
+    if (!Number.isFinite(probe[i])) return say("Non-finite samples.", "err");
+  }
+
+  say(`Demodulating ${(iq.length / 2).toLocaleString()} samples…`);
+  await new Promise((r) => setTimeout(r, 0));
+  const t0 = performance.now();
+
+  // Try APRS first, then the resource grid. Auto-detection rather than a mode
+  // switch: a player should not have to tell the terminal what they sent.
+  let frames = [];
+  try { frames = demodAprs(iq, rate); } catch { /* fall through to OFDM */ }
+  const ms = Math.round(performance.now() - t0);
+
+  if (frames.length) {
+    const lines = frames.map((f) =>
+      `  ${esc(f.src[0])}&gt;${esc(f.dest[0])}:${esc(f.info)}`).join("\n");
+    if (stage === "uplink") {
+      for (const f of frames) {
+        const flag = await tryUnseal(f.bytes);
+        if (flag) {
+          say(`Recovered ${frames.length} frame(s) in ${ms} ms:\n<pre>${lines}</pre>` +
+              `<div class="flag">${esc(flag)}</div>`);
+          openGames();
+          return;
+        }
+      }
+      const hasYear = frames.some((f) => f.info.includes(YEAR));
+      return say(`Recovered ${frames.length} frame(s) in ${ms} ms:\n<pre>${lines}</pre>` +
+        `<span class="muted">` +
+        (hasYear ? "Not the expected frame." : `No ${YEAR} in your message.`) +
+        `</span>`, "warn");
     }
-  });
-  document.getElementById("bs-new").addEventListener("click", newBs);
-  document.getElementById("bs-fire").addEventListener("click", fireSalvo);
-  newTtt();
-  el.scrollIntoView({ behavior: "smooth", block: "start" });
-}
+    return handleTttFrame(frames[0].info, lines, ms);
+  }
+
+  if (stage !== "battleship") {
+    return say(`No frame recovered (${ms} ms).`, "warn");
+  }
+
+  let grid;
+  try { grid = demodOfdm(iq); } catch (e) {
+    return say(`No frame recovered, and no resource grid either.`, "warn");
+  }
+  if (grid.syncSeen < N_SC) {
+    return say(`Sync symbol incomplete: ${grid.syncSeen} of ${N_SC} subcarriers.`, "warn");
+  }
+  if (!grid.cells.size) return say("Sync found, but no elements occupied.", "warn");
+  handleSalvo(grid.cells, Math.round(performance.now() - t0));
+});

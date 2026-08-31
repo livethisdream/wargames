@@ -43,7 +43,9 @@ Then open <http://localhost:8000/>.
 | Path | |
 |---|---|
 | `index.html` | the terminal |
-| `js/aprs.js` | the demodulator |
+| `js/aprs.js` | packet demodulator |
+| `js/ofdm.js` | resource-grid demodulator |
+| `js/games.js` | game engines |
 | `js/main.js` | file handling, key derivation, decryption |
-| `challenge/briefing.*` | the captured transmission |
+| `challenge/*` | captured transmissions |
 | `flag_blob.json` | ciphertext and nonce. No flag. |

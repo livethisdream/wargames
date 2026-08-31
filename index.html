@@ -82,31 +82,18 @@
 
   <section id="games" hidden>
     <h2 style="margin-top:1rem">Shall we play a game again?</h2>
+    <p id="rules-link" class="muted"></p>
 
-    <h3 style="color:var(--dim);font-size:.9rem;letter-spacing:.1em;margin:1.5rem 0 .25rem">
-      TIC-TAC-TOE</h3>
-    <p class="muted">WOPR moves second and plays perfectly.</p>
     <div class="grid3" id="ttt"></div>
-    <div class="row">
-      <button id="ttt-new">NEW GAME</button>
-      <button id="ttt-decline">DECLINE</button>
-    </div>
+    <div class="row"><button id="ttt-new">NEW GAME</button></div>
     <div class="log" id="ttt-log"></div>
 
     <div id="bs-wrap" hidden>
-    <h3 style="color:var(--dim);font-size:.9rem;letter-spacing:.1em;margin:2.5rem 0 .25rem">
-      RESOURCE GRID</h3>
-    <p class="muted">One resource block. Columns are OFDM symbols, rows are subcarriers.
-       Select up to <span id="bs-salvo">…</span> resource elements, then fire. A miss
-       reports how many neighbouring elements are occupied.</p>
-    <div class="row">
-      <label for="bs-call" style="margin:0">Callsign</label>
-      <input type="text" id="bs-call" value="SDRDLE">
-      <button id="bs-new">NEW BOARD</button>
-      <button id="bs-fire">FIRE SALVO</button>
-    </div>
-    <div class="grid8" id="bs"></div>
-    <div class="log" id="bs-log"></div>
+      <h3 style="color:var(--dim);font-size:.9rem;letter-spacing:.1em;margin:2.5rem 0 .25rem">
+        RESOURCE GRID</h3>
+      <p id="grid-link" class="muted"></p>
+      <div class="grid8" id="bs"></div>
+      <div class="log" id="bs-log"></div>
     </div>
   </section>
 
