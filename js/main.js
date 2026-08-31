@@ -89,7 +89,6 @@ function openGames() {
   const el = document.getElementById("games");
   el.hidden = false;
   document.getElementById("rules-link").innerHTML = link("rules");
-  document.getElementById("ttt-new").addEventListener("click", newTtt);
   newTtt();
   stage = "tictactoe";
   el.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -111,6 +110,10 @@ function openGrid() {
 
 // --- moves -------------------------------------------------------------------
 
+// After a game ends the terminal asks again, and the answer arrives the same
+// way every other move does. Nothing here is a button.
+const AGAIN = "TRANSMIT NEW OR DECLINE.";
+
 function handleTttFrame(info, lines, ms) {
   if (/\bDECLINE\b/i.test(info)) {
     if (!ttt.finished) ttt.decline();
@@ -118,6 +121,15 @@ function handleTttFrame(info, lines, ms) {
     document.getElementById("ttt-log").textContent = "DECLINED. THAT WAS THE MOVE.";
     openGrid();
     say(`<pre>${lines}</pre><span class="muted">Declined.</span>`);
+    return;
+  }
+  if (/\bNEW\b/i.test(info)) {
+    newTtt();
+    say(`<pre>${lines}</pre><span class="muted">New game.</span>`);
+    return;
+  }
+  if (ttt.finished) {
+    say(`<pre>${lines}</pre><span class="muted">That game is over. ${AGAIN}</span>`, "warn");
     return;
   }
   const idx = parseCell(info);
@@ -133,8 +145,8 @@ function handleTttFrame(info, lines, ms) {
   }
   const log = document.getElementById("ttt-log");
   log.textContent = ttt.finished
-    ? (ttt.outcome === "D" ? "NO WINNER. THERE NEVER IS."
-       : "YOU LOSE. TRY AGAIN, OR DO NOT.")
+    ? (ttt.outcome === "D" ? `NO WINNER. THERE NEVER IS.\n${AGAIN}`
+       : `YOU LOSE.\n${AGAIN}`)
     : "";
   say(`<pre>${lines}</pre><span class="muted">Move accepted (${ms} ms).</span>`);
 }
