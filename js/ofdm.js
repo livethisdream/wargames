@@ -29,6 +29,14 @@ export const N_SYM = 7;   // OFDM symbols in a slot
 // at every symbol boundary so it cannot break the tie. The slot reads several
 // symbols late. LTE carries sync and reference signals for exactly this reason.
 export const SYNC_SYM = 0;
+// The sync symbol carries a phase ramp: subcarrier k has phase 2*pi*k/12.
+// Detecting energy is the easy half of reverse-engineering this; INDEXING is
+// the half that quietly ruins a solve. Bins run -6..-1 and +1..+6 with DC
+// skipped, so a correct demodulator can still put k=0 on the wrong end and
+// produce a mirrored board with nothing to contradict it. The ramp says which
+// bin is k=0 and which way k runs, and it rides in the phase, which nothing
+// else here was using.
+export const SYNC_PHASE_STEP_DEG = 360 / N_SC;
 export const N_SHOT_SYM = N_SYM - 1;   // the board's l axis: symbols 1-6
 const CP_FIRST = 10;
 const CP_REST = 9;
@@ -178,6 +186,7 @@ export function demodulate(interleaved, start) {
   const used = new Set(SC_BINS.map(binIndex));
   used.add(0);
   const mags = [];
+  const syncBins = [];
   const noise = [];
   let pos = start;
   for (let l = 0; l < N_SYM; l++) {
@@ -191,6 +200,7 @@ export function demodulate(interleaved, start) {
     for (let k = 0; k < N_SC; k++) {
       const b = binIndex(SC_BINS[k]);
       row[k] = Math.hypot(br[b], bi[b]) / NFFT;
+      if (l === SYNC_SYM) syncBins.push({ re: br[b] / NFFT, im: bi[b] / NFFT });
     }
     mags.push(row);
     for (let b = 0; b < NFFT; b++) {
@@ -209,6 +219,16 @@ export function demodulate(interleaved, start) {
   let syncSeen = 0;
   for (let k = 0; k < N_SC; k++) if (mags[SYNC_SYM][k] > threshold) syncSeen++;
 
+  // Mean phase step across the sync ramp. A correct mapping reads +30 degrees;
+  // reversed reads -30, which is the whole reason it is there.
+  let sr = 0, si = 0;
+  for (let k = 1; k < N_SC; k++) {
+    const a = syncBins[k], b = syncBins[k - 1];
+    sr += a.re * b.re + a.im * b.im;
+    si += a.im * b.re - a.re * b.im;
+  }
+  const syncRampDeg = syncSeen ? (Math.atan2(si, sr) * 180) / Math.PI : 0;
+
   // Board coordinates: symbol 0 is sync and is never a shot.
   const cells = new Set();
   for (let l = 1; l < N_SYM; l++) {
@@ -216,5 +236,5 @@ export function demodulate(interleaved, start) {
       if (mags[l][k] > threshold) cells.add(`${l - 1},${k}`);
     }
   }
-  return { cells, mags, start, syncSeen };
+  return { cells, mags, start, syncSeen, syncRampDeg };
 }
