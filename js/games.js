@@ -29,6 +29,19 @@ const LINES = [
   [0, 4, 8], [2, 4, 6],
 ];
 
+/** Find a move in a message. Columns A-C left to right, rows 1-3 top to
+ *  bottom, so A1 is the top-left square and C3 the bottom-right.
+ *
+ *  Deliberately loose: it scans for the first column/row pair anywhere in the
+ *  text, so ">MOVE B2", ">b2" and ">FIRE AT B2" all work. A player who has
+ *  just hand-rolled an AX.25 frame should not then lose to punctuation.
+ *  Returns a board index 0-8, or null. */
+export function parseCell(text) {
+  const m = /\b([ABC])\s*([123])\b/i.exec(String(text));
+  if (!m) return null;
+  return (Number(m[2]) - 1) * 3 + "ABC".indexOf(m[1].toUpperCase());
+}
+
 export function winner(board) {
   for (const [a, b, c] of LINES) {
     if (board[a] !== EMPTY && board[a] === board[b] && board[b] === board[c]) {

@@ -1,6 +1,6 @@
 import { demodulate as demodAprs } from "./aprs.js";
 import { demodulate as demodOfdm, N_SC, N_SHOT_SYM } from "./ofdm.js";
-import { TicTacToe, Battleship, EMPTY, SALVO, COLS, ROWS } from "./games.js";
+import { TicTacToe, Battleship, parseCell, EMPTY, SALVO, COLS, ROWS } from "./games.js";
 
 const YEAR = "2026";
 const out = document.getElementById("out");
@@ -111,12 +111,6 @@ function openGrid() {
 
 // --- moves -------------------------------------------------------------------
 
-const parseTttCell = (info) => {
-  const m = /\b([ABC])\s*([123])\b/i.exec(info);
-  if (!m) return null;
-  return (Number(m[2]) - 1) * 3 + "ABC".indexOf(m[1].toUpperCase());
-};
-
 function handleTttFrame(info, lines, ms) {
   if (/\bDECLINE\b/i.test(info)) {
     if (!ttt.finished) ttt.decline();
@@ -126,7 +120,7 @@ function handleTttFrame(info, lines, ms) {
     say(`<pre>${lines}</pre><span class="muted">Declined.</span>`);
     return;
   }
-  const idx = parseTttCell(info);
+  const idx = parseCell(info);
   if (idx === null) {
     say(`<pre>${lines}</pre><span class="muted">No move in that frame.</span>`, "warn");
     return;
