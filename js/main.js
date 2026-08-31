@@ -172,6 +172,10 @@ function renderBs() {
 }
 
 function newBs() {
+  // Written from the constant, never typed into the copy. A hardcoded number
+  // here goes stale the moment SALVO changes, and prose does not fail a test.
+  const label = document.getElementById("bs-salvo");
+  if (label) label.textContent = SALVO;
   const call = (document.getElementById("bs-call").value || "SDRDLE").toUpperCase();
   bs = new Battleship(call);
   selected = [];
