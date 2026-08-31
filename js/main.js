@@ -1,6 +1,8 @@
 import { demodulate } from "./aprs.js";
 import { TicTacToe, Battleship, EMPTY, SALVO, COLS, ROWS } from "./games.js";
 
+const YEAR = "2026";
+
 const out = document.getElementById("out");
 const rateEl = document.getElementById("rate");
 
@@ -81,9 +83,16 @@ document.getElementById("file").addEventListener("change", async (ev) => {
     }
   }
 
+  // A quick, specific check before the generic rejection. The briefing asks for
+  // the current year, so a message without it failed an instruction the player
+  // was actually given -- saying so is not a hint, it is confirming they did
+  // not do the thing they were told. Anything else stays terse.
+  const hasYear = frames.some((f) => f.info.includes(YEAR));
   say(
     `Recovered ${frames.length} frame(s) in ${ms} ms:\n<pre>${lines}</pre>` +
-    `<span class="muted">Not the expected frame.</span>`, "warn");
+    `<span class="muted">` +
+    (hasYear ? "Not the expected frame." : `No ${YEAR} in your message.`) +
+    `</span>`, "warn");
 });
 
 // --- games -------------------------------------------------------------------

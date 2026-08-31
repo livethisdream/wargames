@@ -3,5 +3,5 @@
   "alg": "AES-256-GCM",
   "kdf": "SHA-256 of the AX.25 UI frame, FCS included",
   "nonce": "Uii4szAAxlsxIdy+",
-  "ct": "x+DAtTIPfIO1siEDOWHrKX9jUbdj8VTDSWpV79QrP/uK1XL4ryvG07nkFQ=="
+  "ct": "SYOeouVgN9pEJSjsjTqWi8hfygJtWvsfvMkUjQHxCgOQzUAqCgSkb76rIg=="
 }
